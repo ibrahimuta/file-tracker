@@ -145,15 +145,15 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-lg border border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="h-[calc(100vh-24rem)] overflow-y-auto">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <TableRow key={headerGroup.id} className="bg-muted/50 hover:bg-muted/50">
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id}>
+                      <TableHead key={header.id} className="text-muted-foreground/70">
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -185,7 +185,7 @@ export function DataTable<TData, TValue>({
                       onRowSelect?.(row.original as FileData);
                       toast.success('File selected');
                     }}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer transition-colors hover:bg-muted/30"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
@@ -201,7 +201,7 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
+                    className="h-24 text-center text-muted-foreground/70"
                   >
                     No results.
                   </TableCell>

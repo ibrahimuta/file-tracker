@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
+  ChevronRight,
   Files,
   Settings,
   BarChart3,
@@ -16,6 +17,8 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
+  SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet';
 import {
   Tooltip,
@@ -88,6 +91,10 @@ export function SideNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[240px] sm:w-[280px]">
+        <SheetTitle className="text-lg font-semibold mb-4">Navigation</SheetTitle>
+        <SheetDescription className="text-sm text-muted-foreground mb-4">
+          Access different sections of the application.
+        </SheetDescription>
         <nav className="grid gap-2 py-4">
           {navItems.map((item) => (
             <Link
@@ -119,33 +126,25 @@ export function SideNav() {
       {/* Desktop Navigation */}
       <motion.div
         className={cn(
-          'hidden md:flex h-screen flex-col gap-4 border-r bg-background px-2 pb-4',
+          'hidden md:flex h-screen flex-col gap-4 border-r border-border/40 bg-background/95 backdrop-blur px-2 pb-4',
           isCollapsed ? 'w-[64px]' : 'w-[240px]'
         )}
         animate={{ width: isCollapsed ? 64 : 240 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="flex h-14 items-center justify-between px-2">
-          {!isCollapsed && (
-            <span className="text-lg font-semibold">Navigation</span>
-          )}
+        <div className="flex h-14 items-center justify-between">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
-            onClick={toggleCollapse}
+            className="h-8 w-8 hover:bg-muted/50"
+            onClick={() => setIsCollapsed(!isCollapsed)}
           >
-            <ChevronLeft
-              className={cn(
-                'h-4 w-4 transition-transform',
-                isCollapsed && 'rotate-180'
-              )}
-            />
+            {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
           </Button>
         </div>
 
         <nav className="grid gap-2">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="sync">
             {navItems.map((item) => (
               <motion.div
                 key={item.href}
