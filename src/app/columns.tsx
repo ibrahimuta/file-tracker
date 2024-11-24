@@ -22,27 +22,6 @@ export const columns: ColumnDef<FileData>[] = [
       return (
         <div className="flex items-center gap-2">
           <span className="font-medium">{file.filename}</span>
-          {file.documentUrl && (
-            <a
-              href={file.documentUrl}
-              className="text-xs text-blue-500 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View
-            </a>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
-    cell: ({ row }) => {
-      return (
-        <div className="text-sm text-muted-foreground">
-          {row.getValue("type")}
         </div>
       );
     },
@@ -64,19 +43,19 @@ export const columns: ColumnDef<FileData>[] = [
     cell: ({ row }) => {
       const stage = row.getValue("stage") as keyof typeof stageColors;
       return (
-        <Badge variant="secondary" className={stageColors[stage]}>
+        <Badge className={stageColors[stage]}>
           {stage.charAt(0).toUpperCase() + stage.slice(1)}
         </Badge>
       );
     },
   },
   {
-    accessorKey: "lastModified",
-    header: "Last Modified",
+    accessorKey: "uploadedAt",
+    header: "Uploaded",
     cell: ({ row }) => {
       return (
         <div className="text-sm text-muted-foreground">
-          {new Date(row.getValue("lastModified")).toLocaleString()}
+          {new Date(row.getValue("uploadedAt")).toLocaleString()}
         </div>
       );
     },

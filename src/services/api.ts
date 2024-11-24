@@ -1,4 +1,4 @@
-import { FileData } from '@/types';
+import { FileData, FileStage } from '@/types';
 
 // Simulated API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -12,13 +12,7 @@ const FILE_TYPES = {
   'text': { extensions: ['txt', 'md'], sizes: { min: 1000, max: 100000 } },
 } as const;
 
-// Status configurations with weighted probabilities
-const STATUS_WEIGHTS = {
-  'processed': 0.6,    // 60% chance
-  'processing': 0.2,   // 20% chance
-  'error': 0.1,        // 10% chance
-  'pending': 0.1       // 10% chance
-} as const;
+const STAGES: FileStage[] = ['ordered', 'shipped', 'invoiced', 'remitted', 'complete'];
 
 // Generate a random file
 function generateFile(index: number): FileData {
@@ -34,41 +28,19 @@ function generateFile(index: number): FileData {
     Math.random() * (typeConfig.sizes.max - typeConfig.sizes.min) + typeConfig.sizes.min
   );
   
-  // Generate random status based on weights
-  const random = Math.random();
-  let status: FileData['status'] = 'pending';
-  let sum = 0;
-  for (const [key, weight] of Object.entries(STATUS_WEIGHTS)) {
-    sum += weight;
-    if (random <= sum) {
-      status = key as FileData['status'];
-      break;
-    }
-  }
+  // Generate random stage
+  const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
   
   // Generate random date within last 30 days
   const date = new Date();
   date.setDate(date.getDate() - Math.floor(Math.random() * 30));
   
-  // Common file name prefixes for different types
-  const prefixes = {
-    pdf: ['Report', 'Document', 'Contract', 'Invoice'],
-    document: ['Proposal', 'Letter', 'Agreement', 'Resume'],
-    spreadsheet: ['Budget', 'Forecast', 'Analysis', 'Data'],
-    image: ['Photo', 'Screenshot', 'Diagram', 'Chart'],
-    text: ['Notes', 'Log', 'README', 'Changes']
-  };
-  
-  const prefix = prefixes[fileType][Math.floor(Math.random() * prefixes[fileType].length)];
-  const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  
   return {
     id: `file-${index + 1}`,
-    filename: `${prefix}_${randomNum}.${extension}`,
-    type: extension.toUpperCase(),
+    filename: `file-${index + 1}.${extension}`,
     size,
-    status,
-    lastModified: date.toISOString(),
+    uploadedAt: date.toISOString(),
+    stage,
   };
 }
 
@@ -77,43 +49,27 @@ const mockFiles: FileData[] = Array.from({ length: 50 }, (_, i) => generateFile(
 
 const API_BASE_URL = '/api';
 
+// API functions
 export async function fetchFiles(): Promise<FileData[]> {
-  const response = await fetch(`${API_BASE_URL}/files`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch files');
-  }
-  
-  return response.json();
+  await delay(500); // Simulate network delay
+  return mockFiles;
 }
 
 export async function fetchFileById(id: string): Promise<FileData | null> {
-  const response = await fetch(`${API_BASE_URL}/files/${id}`);
-  
-  if (!response.ok) {
-    if (response.status === 404) {
-      return null;
-    }
-    throw new Error('Failed to fetch file');
-  }
-  
-  return response.json();
+  await delay(300);
+  const file = mockFiles.find(f => f.id === id);
+  if (!file) return null;
+  return file;
 }
 
-export async function updateFileStatus(id: string, status: FileData['status']): Promise<FileData> {
-  const response = await fetch(`${API_BASE_URL}/files/${id}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ status }),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to update file status');
+export async function updateFile(id: string, data: Partial<FileData>): Promise<FileData> {
+  await delay(300);
+  const index = mockFiles.findIndex(f => f.id === id);
+  if (index === -1) {
+    throw new Error('File not found');
   }
-  
-  return response.json();
+  mockFiles[index] = { ...mockFiles[index], ...data };
+  return mockFiles[index];
 }
 
 // Cache key factory

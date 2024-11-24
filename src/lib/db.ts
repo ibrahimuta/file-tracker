@@ -49,62 +49,38 @@ const mockFiles: FileData[] = [
     size: getRandomFileSize(),
     uploadedAt: getRandomDate(),
     stage: 'ordered' as FileStage,
-    metadata: {
-      orderNumber: `ORD-${Math.floor(Math.random() * 10000)}`,
-      customer: `Customer ${i + 1}`,
-    },
   })),
-  
   // Shipped files
-  ...Array.from({ length: 5 }, (_, i) => ({
+  ...Array.from({ length: 4 }, (_, i) => ({
     id: `file-shipped-${i + 1}`,
     filename: `shipped-file-${i + 1}.pdf`,
     size: getRandomFileSize(),
     uploadedAt: getRandomDate(),
     stage: 'shipped' as FileStage,
-    metadata: {
-      trackingNumber: `TRK-${Math.floor(Math.random() * 10000)}`,
-      carrier: ['FedEx', 'UPS', 'DHL'][Math.floor(Math.random() * 3)],
-    },
   })),
-  
   // Invoiced files
-  ...Array.from({ length: 5 }, (_, i) => ({
+  ...Array.from({ length: 3 }, (_, i) => ({
     id: `file-invoiced-${i + 1}`,
     filename: `invoiced-file-${i + 1}.pdf`,
     size: getRandomFileSize(),
     uploadedAt: getRandomDate(),
     stage: 'invoiced' as FileStage,
-    metadata: {
-      invoiceNumber: `INV-${Math.floor(Math.random() * 10000)}`,
-      amount: Math.floor(Math.random() * 10000),
-    },
   })),
-  
   // Remitted files
-  ...Array.from({ length: 5 }, (_, i) => ({
+  ...Array.from({ length: 2 }, (_, i) => ({
     id: `file-remitted-${i + 1}`,
     filename: `remitted-file-${i + 1}.pdf`,
     size: getRandomFileSize(),
     uploadedAt: getRandomDate(),
     stage: 'remitted' as FileStage,
-    metadata: {
-      remittanceId: `REM-${Math.floor(Math.random() * 10000)}`,
-      paymentMethod: ['ACH', 'Wire', 'Check'][Math.floor(Math.random() * 3)],
-    },
   })),
-  
-  // Completed files
-  ...Array.from({ length: 5 }, (_, i) => ({
+  // Complete files
+  ...Array.from({ length: 1 }, (_, i) => ({
     id: `file-complete-${i + 1}`,
     filename: `complete-file-${i + 1}.pdf`,
     size: getRandomFileSize(),
     uploadedAt: getRandomDate(),
     stage: 'complete' as FileStage,
-    metadata: {
-      completedBy: `User ${i + 1}`,
-      notes: 'All processing completed',
-    },
   })),
 ];
 
@@ -114,28 +90,26 @@ export const db = {
     list: async () => {
       return mockFiles;
     },
-    get: async (id: string) => {
-      const file = mockFiles.find((f) => f.id === id);
+    get: async (id: string): Promise<FileWithEvents | null> => {
+      const file = mockFiles.find(f => f.id === id);
       if (!file) return null;
       
-      // Generate events based on the file's current stage
-      const events = generateEventsForStage(file.id, file.stage);
-      
+      const events = generateEventsForStage(id, file.stage);
       return {
         ...file,
         events,
-      } as FileWithEvents;
+      };
     },
-    update: async (id: string, data: Partial<FileData>) => {
-      const index = mockFiles.findIndex((f) => f.id === id);
+    update: async (id: string, data: Partial<FileData>): Promise<FileWithEvents | null> => {
+      const index = mockFiles.findIndex(f => f.id === id);
       if (index === -1) return null;
       
-      mockFiles[index] = {
-        ...mockFiles[index],
-        ...data,
-      };
-      
-      return mockFiles[index];
+      mockFiles[index] = { ...mockFiles[index], ...data };
+      return db.files.get(id);
+    },
+    getEvents: async (id: string): Promise<FileEvent[]> => {
+      const file = await db.files.get(id);
+      return file ? file.events : [];
     },
   },
 };

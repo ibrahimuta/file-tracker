@@ -8,6 +8,6 @@ interface RouteParams {
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
-  const events = await db.getFileEvents(params.id);
+  const events = await db.files.getEvents(params.id);
   return NextResponse.json(events);
 }
