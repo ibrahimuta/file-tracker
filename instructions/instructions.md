@@ -108,7 +108,18 @@ Features:
 - Data prefetching
 - Cache persistence
 
-STEP 5: UI/UX Enhancement
+STEP 5: Timeline and Table Integration
+Integrate the table component with the timeline component to provide seamless interaction.
+
+Features:
+- Clicking a row in the table dynamically updates the timeline to show the progress of the selected file.
+-	Use the FileEvent interface to fetch file-specific timeline data.
+-	Highlight the selected row in the table for better visibility.
+-	Utilize TanStack Query for fetching and caching timeline data specific to the selected file.
+-	Use Framer Motion to animate the transition of the timeline as it updates.
+-	Display a “No file selected” placeholder message in the timeline by default, with an animated fade-in effect.
+
+STEP 6: UI/UX Enhancement
 Integration features:
 - Toast notifications using React Hot Toast
 - Loading skeletons using shadcn/ui Skeleton

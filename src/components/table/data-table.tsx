@@ -28,22 +28,24 @@ import {
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
 import { formatBytes, formatDate } from '@/lib/utils';
+import { useFiles } from '@/hooks/use-files';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
-  data: TData[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
-  data,
 }: DataTableProps<TData, TValue>) {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = React.useState<string>("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  
+  const { files, isLoading, isError, error, refetch } = useFiles();
 
   const table = useReactTable({
-    data,
+    data: files as TData[],
     columns,
     state: {
       sorting,
@@ -83,6 +85,60 @@ export function DataTable<TData, TValue>({
     },
     globalFilterFn: 'fuzzy',
   });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-[250px]" />
+          <Skeleton className="h-8 w-[70px]" />
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  {Array.from({ length: columns.length }).map((_, cellIndex) => (
+                    <TableCell key={cellIndex}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-md border border-red-200 p-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-red-600">Error loading files:</span>
+          <span>{(error as Error)?.message || 'Unknown error'}</span>
+          <button
+            onClick={() => refetch()}
+            className="rounded bg-red-50 px-2 py-1 text-sm text-red-600 hover:bg-red-100"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

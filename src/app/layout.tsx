@@ -18,7 +18,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "File Tracker",
-  description: "Modern file processing dashboard",
+  description: "Track and monitor your files",
 };
 
 export default function RootLayout({

@@ -6,31 +6,7 @@ import { fadeIn } from '@/lib/animations';
 import { Timeline } from '@/components/timeline/timeline';
 import { stages } from '@/lib/utils';
 import { DataTable } from '@/components/table/data-table';
-import { columns, type FileData } from '@/components/table/columns';
-
-// Generate sample data
-const generateSampleData = (count: number): FileData[] => {
-  const fileTypes = ['pdf', 'doc', 'txt', 'jpg', 'png', 'xlsx'];
-  const statuses: ('pending' | 'processing' | 'processed' | 'error')[] = [
-    'pending',
-    'processing',
-    'processed',
-    'error',
-  ];
-
-  return Array.from({ length: count }, (_, i) => ({
-    id: `file-${i + 1}`,
-    filename: `sample-file-${i + 1}.${fileTypes[i % fileTypes.length]}`,
-    size: Math.floor(Math.random() * 10000000), // Random size up to 10MB
-    type: fileTypes[i % fileTypes.length],
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    lastModified: new Date(
-      Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000
-    ), // Random date within last 30 days
-  }));
-};
-
-const data = generateSampleData(50); // Generate 50 sample files
+import { columns } from '@/components/table/columns';
 
 export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
@@ -77,7 +53,7 @@ export default function Home() {
       </div>
 
       <div className="bg-white rounded-lg shadow">
-        <DataTable columns={columns} data={data} />
+        <DataTable columns={columns} />
       </div>
     </motion.div>
   );
