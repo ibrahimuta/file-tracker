@@ -3,10 +3,32 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import { FileText, CheckCircle, Truck, FileIcon, CreditCard } from 'lucide-react';
-import { stages } from '@/lib/utils';
 import { fadeIn, slideIn } from '@/lib/animations';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+export const stages = {
+  ORDERED: {
+    label: 'Ordered',
+    color: 'text-purple-500',
+  },
+  SHIPPED: {
+    label: 'Shipped',
+    color: 'text-orange-500',
+  },
+  INVOICED: {
+    label: 'Invoiced',
+    color: 'text-pink-500',
+  },
+  REMITTED: {
+    label: 'Remitted',
+    color: 'text-yellow-500',
+  },
+  COMPLETE: {
+    label: 'Complete',
+    color: 'text-green-500',
+  },
+} as const;
 
 interface TimelineProps {
   currentStage: keyof typeof stages;

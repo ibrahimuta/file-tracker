@@ -5,25 +5,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const stages = {
-  ORDERED: {
-    label: 'Ordered',
-    color: 'text-purple-500',
-  },
-  SHIPPED: {
-    label: 'Shipped',
-    color: 'text-orange-500',
-  },
-  INVOICED: {
-    label: 'Invoiced',
-    color: 'text-pink-500',
-  },
-  REMITTED: {
-    label: 'Remitted',
-    color: 'text-yellow-500',
-  },
-  COMPLETE: {
-    label: 'Complete',
-    color: 'text-green-500',
-  },
-} as const;
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+export function formatDate(date: Date | string): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
