@@ -33,6 +33,7 @@
     "next": "15.0.3",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-hook-form": "^7.50.1",
     "react-hot-toast": "^2.4.1",
     "react-hotkeys-hook": "^4.6.1",
     "tailwind-merge": "^2.5.4",
