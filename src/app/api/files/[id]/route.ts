@@ -13,7 +13,7 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const file = await db.getFileById(params.id);
+    const file = await db.files.get(params.id);
     if (!file) {
       return NextResponse.json(
         { error: 'File not found' },
@@ -22,6 +22,7 @@ export async function GET(
     }
     return NextResponse.json(file);
   } catch (error) {
+    console.error('Error fetching file:', error);
     return NextResponse.json(
       { error: 'Failed to fetch file' },
       { status: 500 }
@@ -35,9 +36,9 @@ export async function PATCH(
 ) {
   try {
     const body = await request.json();
-    const { stage, details } = body as { stage: FileStage; details?: string };
+    const { stage } = body;
 
-    const updatedFile = await db.updateFileStage(params.id, stage, details);
+    const updatedFile = await db.files.update(params.id, { stage });
     if (!updatedFile) {
       return NextResponse.json(
         { error: 'File not found' },
@@ -47,6 +48,7 @@ export async function PATCH(
 
     return NextResponse.json(updatedFile);
   } catch (error) {
+    console.error('Error updating file:', error);
     return NextResponse.json(
       { error: 'Failed to update file' },
       { status: 500 }

@@ -1,97 +1,141 @@
-import { FileData, FileEvent, FileWithEvents, FileStage } from '@/types';
+import { FileData, FileEvent, FileStage, FileWithEvents } from '@/types';
 
-// This will be replaced with real database connection later
-class Database {
-  private files: FileData[] = [];
-  private events: FileEvent[] = [];
-
-  constructor() {
-    // Initialize with some data (will be replaced with database connection)
-    this.generateSampleData();
-  }
-
-  private generateSampleData() {
-    const stages: FileStage[] = ['ordered', 'shipped', 'invoiced', 'remitted', 'complete'];
-    const documentTypes = ['Invoice', 'Purchase Order', 'Shipping Label', 'Receipt'];
-
-    // Generate files
-    this.files = Array.from({ length: 10 }, (_, i) => {
-      const stage = stages[Math.floor(Math.random() * stages.length)];
-      const type = documentTypes[Math.floor(Math.random() * documentTypes.length)];
-      
-      return {
-        id: `file-${i + 1}`,
-        filename: `${type.toLowerCase()}-${i + 1}.pdf`,
-        type,
-        size: 1024 * 1024 * (Math.random() * 10 + 1), // 1-11MB
-        stage,
-        lastModified: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(), // Within last week
-        documentUrl: Math.random() > 0.5 ? `https://example.com/docs/${i + 1}` : undefined,
-      };
-    });
-
-    // Generate events for each file
-    this.files.forEach(file => {
-      const currentStageIndex = stages.indexOf(file.stage);
-      
-      // Generate events for all stages up to current stage
-      for (let i = 0; i <= currentStageIndex; i++) {
-        const date = new Date();
-        date.setHours(date.getHours() - (currentStageIndex - i) * 24); // Events spaced 24 hours apart
-
-        this.events.push({
-          id: `event-${file.id}-${i + 1}`,
-          fileId: file.id,
-          stage: stages[i],
-          timestamp: date.toISOString(),
-          details: `Document ${stages[i]} at ${date.toLocaleString()}`,
-          documentUrl: Math.random() > 0.7 ? `https://example.com/docs/${file.id}/${stages[i]}` : undefined,
-        });
-      }
-    });
-  }
-
-  async getAllFiles(): Promise<FileData[]> {
-    return this.files;
-  }
-
-  async getFileById(id: string): Promise<FileWithEvents | null> {
-    const file = this.files.find(f => f.id === id);
-    if (!file) return null;
-
-    const events = this.events.filter(e => e.fileId === id);
-    return { ...file, events };
-  }
-
-  async updateFileStage(id: string, stage: FileStage, details?: string): Promise<FileWithEvents | null> {
-    const fileIndex = this.files.findIndex(f => f.id === id);
-    if (fileIndex === -1) return null;
-
-    // Update file stage
-    this.files[fileIndex] = {
-      ...this.files[fileIndex],
-      stage,
-      lastModified: new Date().toISOString(),
-    };
-
-    // Add new event
-    const newEvent: FileEvent = {
-      id: `event-${id}-${this.events.filter(e => e.fileId === id).length + 1}`,
-      fileId: id,
-      stage,
-      timestamp: new Date().toISOString(),
-      details: details || `Document ${stage} at ${new Date().toLocaleString()}`,
-    };
-
-    this.events.push(newEvent);
-
-    return this.getFileById(id);
-  }
-
-  async getFileEvents(id: string): Promise<FileEvent[]> {
-    return this.events.filter(e => e.fileId === id);
-  }
+// Helper function to generate random date within last 30 days
+function getRandomDate(daysAgo = 30) {
+  const date = new Date();
+  date.setDate(date.getDate() - Math.floor(Math.random() * daysAgo));
+  return date.toISOString();
 }
 
-// Export a singleton instance
-export const db = new Database();
+// Helper function to generate random file size between 1MB and 100MB
+function getRandomFileSize() {
+  return Math.floor(Math.random() * 99_000_000) + 1_000_000;
+}
+
+// Helper function to generate mock events for a file based on its current stage
+function generateEventsForStage(fileId: string, currentStage: FileStage): FileEvent[] {
+  const stages: FileStage[] = ['ordered', 'shipped', 'invoiced', 'remitted', 'complete'];
+  const currentIndex = stages.indexOf(currentStage);
+  const events: FileEvent[] = [];
+  
+  // Generate events up to current stage
+  for (let i = 0; i <= currentIndex; i++) {
+    const stage = stages[i];
+    const date = new Date();
+    date.setDate(date.getDate() - (currentIndex - i)); // Earlier stages happened earlier
+    
+    events.push({
+      id: `${fileId}-${stage}`,
+      fileId,
+      stage,
+      timestamp: date.toISOString(),
+      documentUrl: stage === 'invoiced' ? `https://example.com/invoices/${fileId}.pdf` : undefined,
+      metadata: {
+        user: 'system',
+        notes: `File ${stage}`,
+      },
+    });
+  }
+  
+  return events;
+}
+
+// Generate a diverse set of mock files with different stages
+const mockFiles: FileData[] = [
+  // Ordered files
+  ...Array.from({ length: 5 }, (_, i) => ({
+    id: `file-ordered-${i + 1}`,
+    filename: `ordered-file-${i + 1}.pdf`,
+    size: getRandomFileSize(),
+    uploadedAt: getRandomDate(),
+    stage: 'ordered' as FileStage,
+    metadata: {
+      orderNumber: `ORD-${Math.floor(Math.random() * 10000)}`,
+      customer: `Customer ${i + 1}`,
+    },
+  })),
+  
+  // Shipped files
+  ...Array.from({ length: 5 }, (_, i) => ({
+    id: `file-shipped-${i + 1}`,
+    filename: `shipped-file-${i + 1}.pdf`,
+    size: getRandomFileSize(),
+    uploadedAt: getRandomDate(),
+    stage: 'shipped' as FileStage,
+    metadata: {
+      trackingNumber: `TRK-${Math.floor(Math.random() * 10000)}`,
+      carrier: ['FedEx', 'UPS', 'DHL'][Math.floor(Math.random() * 3)],
+    },
+  })),
+  
+  // Invoiced files
+  ...Array.from({ length: 5 }, (_, i) => ({
+    id: `file-invoiced-${i + 1}`,
+    filename: `invoiced-file-${i + 1}.pdf`,
+    size: getRandomFileSize(),
+    uploadedAt: getRandomDate(),
+    stage: 'invoiced' as FileStage,
+    metadata: {
+      invoiceNumber: `INV-${Math.floor(Math.random() * 10000)}`,
+      amount: Math.floor(Math.random() * 10000),
+    },
+  })),
+  
+  // Remitted files
+  ...Array.from({ length: 5 }, (_, i) => ({
+    id: `file-remitted-${i + 1}`,
+    filename: `remitted-file-${i + 1}.pdf`,
+    size: getRandomFileSize(),
+    uploadedAt: getRandomDate(),
+    stage: 'remitted' as FileStage,
+    metadata: {
+      remittanceId: `REM-${Math.floor(Math.random() * 10000)}`,
+      paymentMethod: ['ACH', 'Wire', 'Check'][Math.floor(Math.random() * 3)],
+    },
+  })),
+  
+  // Completed files
+  ...Array.from({ length: 5 }, (_, i) => ({
+    id: `file-complete-${i + 1}`,
+    filename: `complete-file-${i + 1}.pdf`,
+    size: getRandomFileSize(),
+    uploadedAt: getRandomDate(),
+    stage: 'complete' as FileStage,
+    metadata: {
+      completedBy: `User ${i + 1}`,
+      notes: 'All processing completed',
+    },
+  })),
+];
+
+// Mock database operations
+export const db = {
+  files: {
+    list: async () => {
+      return mockFiles;
+    },
+    get: async (id: string) => {
+      const file = mockFiles.find((f) => f.id === id);
+      if (!file) return null;
+      
+      // Generate events based on the file's current stage
+      const events = generateEventsForStage(file.id, file.stage);
+      
+      return {
+        ...file,
+        events,
+      } as FileWithEvents;
+    },
+    update: async (id: string, data: Partial<FileData>) => {
+      const index = mockFiles.findIndex((f) => f.id === id);
+      if (index === -1) return null;
+      
+      mockFiles[index] = {
+        ...mockFiles[index],
+        ...data,
+      };
+      
+      return mockFiles[index];
+    },
+  },
+};

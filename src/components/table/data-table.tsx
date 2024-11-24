@@ -42,7 +42,6 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
     data,
@@ -53,29 +52,64 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onRowSelectionChange: setRowSelection,
     enableColumnFilters: true,
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
     state: {
       sorting,
       columnFilters,
-      rowSelection,
     },
   });
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center py-4">
-        {table.getColumn('filename') && (
-          <Input
-            placeholder="Filter files..."
-            value={(table.getColumn('filename')?.getFilterValue() as string) ?? ''}
-            onChange={(event) =>
-              table.getColumn('filename')?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
-        )}
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        {/* Search Input */}
+        <div className="w-full max-w-sm">
+          {table.getColumn('filename') && (
+            <Input
+              placeholder="Filter files..."
+              value={(table.getColumn('filename')?.getFilterValue() as string) ?? ''}
+              onChange={(event) =>
+                table.getColumn('filename')?.setFilterValue(event.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-6 md:space-y-0">
+          <div className="flex items-center pl-2.5">
+            <span className="text-sm text-muted-foreground">
+              Page {table.getState().pagination.pageIndex + 1} of{' '}
+              {table.getPageCount()}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -101,11 +135,10 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center relative"
                 >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Loading...</span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
                 </TableCell>
               </TableRow>
@@ -113,9 +146,8 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="cursor-pointer hover:bg-muted/50"
                   onClick={() => onRowSelect?.(row.original as FileData)}
+                  className="cursor-pointer hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -139,24 +171,6 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
       </div>
     </div>
   );

@@ -21,33 +21,35 @@ export default function HomePage() {
   }, [files, selectedFile]);
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
-      {/* Timeline Section */}
-      <section className="w-full">
-        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-          {selectedFile ? (
-            <FileTimeline
-              events={fileWithEvents?.events}
-              currentStage={selectedFile.stage}
-              className="bg-card rounded-lg shadow-sm"
-            />
-          ) : (
-            <div className="h-48 flex items-center justify-center text-muted-foreground">
-              No file selected
-            </div>
-          )}
-        </Suspense>
-      </section>
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Fixed Timeline Section */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="container mx-auto py-4">
+          <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+            {selectedFile ? (
+              <FileTimeline
+                events={fileWithEvents?.events}
+                currentStage={selectedFile.stage}
+                className="bg-card rounded-lg shadow-sm"
+              />
+            ) : (
+              <div className="h-48 flex items-center justify-center text-muted-foreground">
+                No file selected
+              </div>
+            )}
+          </Suspense>
+        </div>
+      </div>
 
-      {/* Table Section */}
-      <section>
+      {/* Scrollable Table Section */}
+      <div className="flex-1 container mx-auto py-6 overflow-auto">
         <DataTable
           columns={columns}
           data={files || []}
           loading={isLoading}
           onRowSelect={setSelectedFile}
         />
-      </section>
+      </div>
     </div>
   );
 }
