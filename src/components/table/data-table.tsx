@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Loader2 } from 'lucide-react';
 import {
   ColumnDef,
   SortingState,
@@ -25,7 +24,9 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { FileData } from '@/types';
+import { toast } from 'react-hot-toast';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -42,6 +43,8 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [searchFocused, setSearchFocused] = React.useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   const table = useReactTable({
     data,
@@ -64,6 +67,29 @@ export function DataTable<TData, TValue>({
     },
   });
 
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore shortcuts when search is focused
+      if (searchFocused) return;
+
+      if (e.key === '/') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        toast.success('Search activated (Press Esc to exit)');
+      } else if (e.key === 'ArrowLeft' && table.getCanPreviousPage()) {
+        table.previousPage();
+        toast.success('Previous page');
+      } else if (e.key === 'ArrowRight' && table.getCanNextPage()) {
+        table.nextPage();
+        toast.success('Next page');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [table, searchFocused]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
@@ -71,11 +97,14 @@ export function DataTable<TData, TValue>({
         <div className="w-full max-w-sm">
           {table.getColumn('filename') && (
             <Input
+              ref={searchInputRef}
               placeholder="Filter files..."
               value={(table.getColumn('filename')?.getFilterValue() as string) ?? ''}
               onChange={(event) =>
                 table.getColumn('filename')?.setFilterValue(event.target.value)
               }
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               className="w-full"
             />
           )}
@@ -93,7 +122,10 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => table.previousPage()}
+              onClick={() => {
+                table.previousPage();
+                toast.success('Previous page');
+              }}
               disabled={!table.getCanPreviousPage()}
             >
               Previous
@@ -101,7 +133,10 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => table.nextPage()}
+              onClick={() => {
+                table.nextPage();
+                toast.success('Next page');
+              }}
               disabled={!table.getCanNextPage()}
             >
               Next
@@ -132,21 +167,23 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center relative"
-                >
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  {columns.map((column, cellIndex) => (
+                    <TableCell key={cellIndex} className="p-4">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  onClick={() => onRowSelect?.(row.original as FileData)}
+                  onClick={() => {
+                    onRowSelect?.(row.original as FileData);
+                    toast.success('File selected');
+                  }}
                   className="cursor-pointer hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
