@@ -21,28 +21,27 @@ export default function HomePage() {
   }, [files, selectedFile]);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Fixed Timeline Section */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto py-4">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Timeline Section */}
+      <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-6">
+        <div className="py-4">
           <Suspense fallback={<Skeleton className="h-48 w-full" />}>
             {selectedFile ? (
               <FileTimeline
                 events={fileWithEvents?.events}
                 currentStage={selectedFile.stage}
-                className="bg-card rounded-lg shadow-sm"
               />
             ) : (
-              <div className="h-48 flex items-center justify-center text-muted-foreground">
-                No file selected
+              <div className="text-center text-muted-foreground">
+                Select a file to view its timeline
               </div>
             )}
           </Suspense>
         </div>
       </div>
 
-      {/* Scrollable Table Section */}
-      <div className="flex-1 container mx-auto py-6 overflow-auto">
+      {/* Table Section */}
+      <div className="flex-1 p-6 overflow-hidden">
         <DataTable
           columns={columns}
           data={files || []}

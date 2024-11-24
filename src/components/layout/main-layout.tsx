@@ -12,11 +12,11 @@ export default function MainLayout({
 }) {
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-background">
+      <div className="h-screen flex flex-col bg-background">
         <NavBar />
-        <div className="flex">
+        <div className="flex flex-1 overflow-hidden">
           <SideNav />
-          <main className="flex-1 p-6">
+          <main className="flex-1">
             {children}
           </main>
         </div>
