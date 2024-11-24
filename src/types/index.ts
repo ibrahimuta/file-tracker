@@ -1,8 +1,24 @@
+export type FileStage = 'ordered' | 'shipped' | 'invoiced' | 'remitted' | 'complete';
+
 export interface FileData {
   id: string;
   filename: string;
-  size: number;
   type: string;
-  status: 'pending' | 'processing' | 'processed' | 'error';
-  lastModified: Date;
+  size: number;
+  stage: FileStage;
+  lastModified: string;
+  documentUrl?: string;
 }
+
+export interface FileEvent {
+  id: string;
+  fileId: string;
+  stage: FileStage;
+  timestamp: string;
+  documentUrl?: string;
+  details?: string;
+}
+
+export type FileWithEvents = FileData & {
+  events: FileEvent[];
+};

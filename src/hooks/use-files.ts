@@ -1,13 +1,46 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchFiles, fetchFileById, updateFileStatus, fileKeys } from '@/services/api';
-import { FileData } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { FileData, FileWithEvents, FileStage } from '@/types';
 
+// API functions
+const api = {
+  fetchFiles: async (): Promise<FileData[]> => {
+    const response = await fetch('/api/files');
+    if (!response.ok) throw new Error('Failed to fetch files');
+    return response.json();
+  },
+
+  fetchFile: async (id: string): Promise<FileWithEvents> => {
+    const response = await fetch(`/api/files/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch file');
+    return response.json();
+  },
+
+  updateFileStage: async (id: string, stage: FileStage, details?: string): Promise<FileWithEvents> => {
+    const response = await fetch(`/api/files/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage, details }),
+    });
+    
+    if (!response.ok) throw new Error('Failed to update file stage');
+    return response.json();
+  },
+};
+
+// Query key factory
+const fileKeys = {
+  all: ['files'] as const,
+  lists: () => [...fileKeys.all, 'list'] as const,
+  detail: (id: string) => [...fileKeys.all, 'detail', id] as const,
+};
+
+// Hooks
 export function useFiles() {
   const queryClient = useQueryClient();
 
-  const filesQuery = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: fileKeys.lists(),
-    queryFn: fetchFiles,
+    queryFn: () => api.fetchFiles(),
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -15,61 +48,85 @@ export function useFiles() {
   const prefetchFile = async (id: string) => {
     await queryClient.prefetchQuery({
       queryKey: fileKeys.detail(id),
-      queryFn: () => fetchFileById(id),
+      queryFn: () => api.fetchFile(id),
     });
-  };
-
-  const getFileFromCache = (id: string): FileData | undefined => {
-    return queryClient.getQueryData(fileKeys.lists())?.find((file: FileData) => file.id === id);
-  };
-
-  const updateStatus = async (id: string, status: FileData['status']) => {
-    // Optimistically update the cache
-    const previousFiles = queryClient.getQueryData<FileData[]>(fileKeys.lists()) || [];
-    
-    queryClient.setQueryData(fileKeys.lists(), (old: FileData[] | undefined) => {
-      if (!old) return previousFiles;
-      return old.map(file => 
-        file.id === id ? { ...file, status } : file
-      );
-    });
-
-    try {
-      const updatedFile = await updateFileStatus(id, status);
-      
-      // Update the cache with the server response
-      queryClient.setQueryData(fileKeys.lists(), (old: FileData[] | undefined) => {
-        if (!old) return previousFiles;
-        return old.map(file => 
-          file.id === id ? updatedFile : file
-        );
-      });
-      
-      return updatedFile;
-    } catch (error) {
-      // Revert the cache on error
-      queryClient.setQueryData(fileKeys.lists(), previousFiles);
-      throw error;
-    }
   };
 
   return {
-    files: filesQuery.data ?? [],
-    isLoading: filesQuery.isLoading,
-    isError: filesQuery.isError,
-    error: filesQuery.error,
-    refetch: filesQuery.refetch,
+    data,
+    isLoading,
+    error,
     prefetchFile,
-    getFileFromCache,
-    updateStatus,
   };
 }
 
 export function useFile(id: string) {
   return useQuery({
     queryKey: fileKeys.detail(id),
-    queryFn: () => fetchFileById(id),
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    queryFn: () => api.fetchFile(id),
+    enabled: !!id,
+  });
+}
+
+export function useUpdateFileStage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, stage, details }: { id: string; stage: FileStage; details?: string }) =>
+      api.updateFileStage(id, stage, details),
+    
+    onMutate: async ({ id, stage }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: fileKeys.all });
+
+      // Get snapshot of current data
+      const previousFiles = queryClient.getQueryData<FileData[]>(fileKeys.lists());
+      const previousFile = queryClient.getQueryData<FileWithEvents>(fileKeys.detail(id));
+
+      // Optimistically update files list
+      if (previousFiles) {
+        queryClient.setQueryData<FileData[]>(fileKeys.lists(), 
+          previousFiles.map(file => 
+            file.id === id ? { ...file, stage } : file
+          )
+        );
+      }
+
+      // Optimistically update single file
+      if (previousFile) {
+        queryClient.setQueryData<FileWithEvents>(fileKeys.detail(id), {
+          ...previousFile,
+          stage,
+          events: [
+            {
+              id: `temp-${Date.now()}`,
+              fileId: id,
+              stage,
+              timestamp: new Date().toISOString(),
+              details: `Document ${stage}`,
+            },
+            ...previousFile.events,
+          ],
+        });
+      }
+
+      return { previousFiles, previousFile };
+    },
+
+    onError: (err, { id }, context) => {
+      // Revert optimistic updates on error
+      if (context?.previousFiles) {
+        queryClient.setQueryData(fileKeys.lists(), context.previousFiles);
+      }
+      if (context?.previousFile) {
+        queryClient.setQueryData(fileKeys.detail(id), context.previousFile);
+      }
+    },
+
+    onSettled: (data, error, { id }) => {
+      // Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: fileKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: fileKeys.detail(id) });
+    },
   });
 }

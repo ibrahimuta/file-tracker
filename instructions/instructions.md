@@ -112,12 +112,13 @@ STEP 5: Timeline and Table Integration
 Integrate the table component with the timeline component to provide seamless interaction.
 
 Features:
-- Clicking a row in the table dynamically updates the timeline to show the progress of the selected file.
--	Use the FileEvent interface to fetch file-specific timeline data.
+- Clicking a row in the table dynamically updates the timeline to show the current stage (ordered, shipped, invoiced, remitted, complete) of the selected file.
+-	Use the FileEvent interface to fetch file-specific timeline data, including the status, date, and document URL.
 -	Highlight the selected row in the table for better visibility.
 -	Utilize TanStack Query for fetching and caching timeline data specific to the selected file.
--	Use Framer Motion to animate the transition of the timeline as it updates.
+-	Use Framer Motion to animate the timeline transitions, such as sliding effects for horizontal timelines or fade-in effects during updates.
 -	Display a “No file selected” placeholder message in the timeline by default, with an animated fade-in effect.
+- Ensure the timeline displays vertically on mobile devices and horizontally on laptops/desktops using responsive design with Tailwind CSS.
 
 STEP 6: UI/UX Enhancement
 Integration features:

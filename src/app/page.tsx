@@ -1,60 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { fadeIn } from '@/lib/animations';
-import { Timeline } from '@/components/timeline/timeline';
-import { stages } from '@/lib/utils';
+import { Suspense, useState, useEffect } from 'react';
 import { DataTable } from '@/components/table/data-table';
-import { columns } from '@/components/table/columns';
+import { FileTimeline } from '@/components/timeline/file-timeline';
+import { columns } from './columns';
+import { useFiles, useFile } from '@/hooks/use-files';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FileData } from '@/types';
 
-export default function Home() {
-  const [isMounted, setIsMounted] = useState(false);
-  const [currentStage, setCurrentStage] = useState<keyof typeof stages>('ORDERED');
+export default function HomePage() {
+  const { data: files, isLoading } = useFiles();
+  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
+  const { data: fileWithEvents } = useFile(selectedFile?.id ?? '');
 
+  // Initialize with first file
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return null;
-  }
-
-  const handleNextStage = () => {
-    const stageOrder = ['ORDERED', 'SHIPPED', 'INVOICED', 'REMITTED', 'COMPLETE'] as const;
-    const currentIndex = stageOrder.indexOf(currentStage);
-    if (currentIndex < stageOrder.length - 1) {
-      setCurrentStage(stageOrder[currentIndex + 1]);
+    if (files?.[0] && !selectedFile) {
+      setSelectedFile(files[0]);
     }
-  };
+  }, [files, selectedFile]);
 
   return (
-    <motion.div
-      variants={fadeIn}
-      initial="hidden"
-      animate="visible"
-      className="container mx-auto p-8 space-y-8"
-    >
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold">File Tracker</h1>
-        <p className="text-gray-500">Track your file through the processing pipeline</p>
-      </div>
+    <div className="container mx-auto py-10 space-y-8">
+      {/* Timeline Section */}
+      <section className="w-full">
+        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+          {selectedFile ? (
+            <FileTimeline
+              events={fileWithEvents?.events}
+              currentStage={selectedFile.stage}
+              className="bg-card rounded-lg shadow-sm"
+            />
+          ) : (
+            <div className="h-48 flex items-center justify-center text-muted-foreground">
+              No file selected
+            </div>
+          )}
+        </Suspense>
+      </section>
 
-      <Timeline currentStage={currentStage} documentUrl="#" />
-
-      <div className="flex justify-center">
-        <button
-          onClick={handleNextStage}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-          disabled={currentStage === 'COMPLETE'}
-        >
-          Advance to Next Stage
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow">
-        <DataTable columns={columns} />
-      </div>
-    </motion.div>
+      {/* Table Section */}
+      <section>
+        <DataTable
+          columns={columns}
+          data={files || []}
+          loading={isLoading}
+          onRowSelect={setSelectedFile}
+        />
+      </section>
+    </div>
   );
 }
